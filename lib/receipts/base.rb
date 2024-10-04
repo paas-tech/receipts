@@ -7,10 +7,11 @@ module Receipts
     end
 
     def initialize(attributes = {})
-      super(page_size: attributes.delete(:page_size) || "LETTER", text_direction: 'rtl')
+      super(page_size: attributes.delete(:page_size) || "LETTER")
       setup_fonts attributes.fetch(:font, Receipts.default_font)
 
       @title = attributes.fetch(:title, self.class.title)
+      @bidi = Bidi.new
 
       generate_from(attributes)
     end
@@ -50,18 +51,20 @@ module Receipts
       logo = company[:logo]
 
       if logo.nil?
-        text company.fetch(:name), align: :right, style: :bold, size: 16, color: "4b5563"
+        text company.fetch(:name), align: :left, style: :bold, size: 16, color: "4b5563"
       else
-        image load_image(logo), height: height, position: :right
+        image load_image(logo), height: height, position: :left
       end
 
       move_up height
-      text title, style: :bold, size: 16
+      text title, style: :bold, size: 16, align: :right
     end
 
     def render_details(details, margin_top: 16)
+      rtl_details = details.map { |detail| localize(detail.reverse) }
+
       move_down margin_top
-      table(details, cell_style: {borders: [], inline_format: true, padding: [0, 8, 2, 0]})
+      table(rtl_details, position: :right, cell_style: {borders: [], inline_format: true, padding: [0, 0, 2, 8], align: :right})
     end
 
     def render_billing_details(company:, recipient:, margin_top: 16, display_values: nil)
@@ -72,11 +75,11 @@ module Receipts
 
       line_items = [
         [
-          {content: "<b>#{company.fetch(:name)}</b>\n#{company_details}", padding: [0, 12, 0, 0]},
-          {content: Array(recipient).join("\n"), padding: [0, 12, 0, 0]}
+          {content: localize(Array(recipient).join("\n")), padding: [0, 0, 0, 12]},
+          {content: "<b>#{localize(company.fetch(:name))}</b>\n#{localize(company_details)}", padding: [0, 0, 0, 12]}
         ]
       ]
-      table(line_items, width: bounds.width, cell_style: {borders: [], inline_format: true, overflow: :expand})
+      table(line_items, width: bounds.width, cell_style: {borders: [], inline_format: true, overflow: :expand, align: :right})
     end
 
     def render_line_items(line_items:, margin_top: 30, column_widths: nil)
@@ -104,6 +107,14 @@ module Receipts
 
     def default_message(company:)
       "For questions, contact us anytime at <color rgb='326d92'><link href='mailto:#{company.fetch(:email)}?subject=Question about my receipt'><b>#{company.fetch(:email)}</b></link></color>."
+    end
+
+    def localize(text)
+      if text.is_a?(Array)
+        text.map { |t| @bidi.to_visual(t.connect_arabic_letters) }
+      else
+        @bidi.to_visual(text.connect_arabic_letters)
+      end
     end
   end
 end

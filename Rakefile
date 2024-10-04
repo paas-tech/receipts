@@ -25,15 +25,15 @@ task :receipt do
 
   r = Receipts::Receipt.new(
     recipient: [
-      "<b>Bill To</b>",
-      "Customer",
-      "Address",
-      "City, State Zipcode",
+      "<b>ايصال</b>",
+      "العميل",
+      "العنوان",
+      "المدينة، الرقم البريدي للولاية",
       "customer@example.org"
     ],
     company: {
-      name: "Example, LLC",
-      address: "123 Fake Street\nNew York City, NY 10012",
+      name: "شركة تجريبية",
+      address: "123 شارع مزيف\nمدينة حلب، صندوق بريد 113",
       phone: "(555) 867-5309",
       email: "support@example.com",
       iban: "123456789",
@@ -41,9 +41,9 @@ task :receipt do
       display: [:address, :phone, :email, nil, :iban]
     },
     details: [
-      ["Receipt Number", "123"],
-      ["Date paid", Date.today.strftime("%B %d, %Y")],
-      ["Payment method", "ACH super long super long super long super long super long"]
+      ["رقم الإيصال", "123"],
+      ["تاريخ الدفع", Date.today.strftime("%B %d, %Y")],
+      ["طريقة الدفع", "ACH super long super long super long super long super long"]
     ],
     line_items: [
       ["<b>Item</b>", "<b>Unit Cost</b>", "<b>Quantity</b>", "<b>Amount</b>"],

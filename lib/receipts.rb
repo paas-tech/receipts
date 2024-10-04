@@ -2,6 +2,8 @@ require "receipts/version"
 require "open-uri"
 require "prawn"
 require "prawn/table"
+require "bidi"
+require "arabic-letter-connector"
 
 module Receipts
   autoload :Base, "receipts/base"
