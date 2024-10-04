@@ -113,9 +113,9 @@ module Receipts
 
     def localize(text)
       if text.is_a?(Array)
-        text.map { |t| process_bidi_with_tags(t) }
+        text.map { |t| localize(t) }
       else
-        return unless text
+        return unless text && text.is_a?(String)
 
         process_bidi_with_tags(text)
       end
