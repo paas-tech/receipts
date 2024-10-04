@@ -13,21 +13,21 @@ module Receipts
       @title = attributes.fetch(:title, self.class.title)
       @bidi = Bidi.new
 
-      generate_from(attributes)
+      generate_from(localize(attributes))
     end
 
     def generate_from(attributes)
       return if attributes.empty?
 
-      company = localize(attributes.fetch(:company))
+      company = attributes.fetch(:company)
       header company: company, height: attributes.fetch(:logo_height, 16)
-      render_details localize(attributes.fetch(:details))
-      render_billing_details company: company, recipient: localize(attributes.fetch(:recipient))
+      render_details attributes.fetch(:details)
+      render_billing_details company: company, recipient: attributes.fetch(:recipient)
       render_line_items(
-        line_items: localize(attributes.fetch(:line_items)),
-        column_widths: localize(attributes[:column_widths])
+        line_items: attributes.fetch(:line_items),
+        column_widths: attributes[:column_widths]
       )
-      render_footer localize(attributes.fetch(:footer, default_message(company: company)))
+      render_footer attributes.fetch(:footer, default_message(company: company))
     end
 
     def setup_fonts(custom_font = nil)
@@ -57,7 +57,7 @@ module Receipts
       end
 
       move_up height
-      text title, style: :bold, size: 16, align: :right
+      text localize(title), style: :bold, size: 16, align: :right
     end
 
     def render_details(details, margin_top: 16)
@@ -124,10 +124,11 @@ module Receipts
     end
 
     def process_bidi_with_tags(text)
+      bidi = Bidi.new
       parsed_text = Nokogiri::HTML.fragment(text)
 
       parsed_text.traverse do |node|
-        node.content = @bidi.to_visual(node.text.connect_arabic_letters) if node.text?
+        node.content = bidi.to_visual(node.text.connect_arabic_letters) if node.text?
       end
 
       parsed_text.to_html
