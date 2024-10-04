@@ -57,7 +57,7 @@ module Receipts
       end
 
       move_up height
-      text title, style: :bold, size: 16, align: :right
+      text localize(title), style: :bold, size: 16, align: :right
     end
 
     def render_details(details, margin_top: 16)
@@ -89,11 +89,13 @@ module Receipts
 
       table_options = {
         width: bounds.width,
-        cell_style: {border_color: "eeeeee", inline_format: true},
+        cell_style: {border_color: "eeeeee", inline_format: true, align: :right},
         column_widths: column_widths
       }.compact
 
-      table(line_items, table_options) do
+      rtl_line_items = line_items.map { |line_item| localize(line_item.reverse) }
+
+      table(rtl_line_items, table_options) do
         cells.padding = 6
         cells.borders = []
         row(0..borders).borders = [:bottom]
@@ -102,19 +104,33 @@ module Receipts
 
     def render_footer(message, margin_top: 30)
       move_down margin_top
-      text message, inline_format: true
+      text localize(message), inline_format: true, align: :right
     end
 
     def default_message(company:)
-      "For questions, contact us anytime at <color rgb='326d92'><link href='mailto:#{company.fetch(:email)}?subject=Question about my receipt'><b>#{company.fetch(:email)}</b></link></color>."
+      "<color rgb='326d92'><link href='mailto:#{company.fetch(:email)}?subject=لدي سؤال بخصوص فاتورة'><b>#{company.fetch(:email)}</b></link></color> #{localize("اذا كان لديكم أسئلة، اتصلوا بنا في أي وقت عن طريق الايميل ")}"
     end
 
     def localize(text)
       if text.is_a?(Array)
-        text.map { |t| @bidi.to_visual(t.connect_arabic_letters) }
+        text.map { |t| process_bidi_with_tags(t) }
       else
-        @bidi.to_visual(text.connect_arabic_letters)
+        return unless text
+
+        process_bidi_with_tags(text)
       end
+    end
+
+    def process_bidi_with_tags(text)
+      parsed_text = Nokogiri::HTML.fragment(text)
+
+      parsed_text.traverse do |node|
+        if node.text?
+          node.content = @bidi.to_visual(node.text.connect_arabic_letters)
+        end
+      end
+
+      parsed_text.to_html
     end
   end
 end

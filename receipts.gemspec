@@ -30,4 +30,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "prawn", ">= 1.3.0", "< 3.0.0"
   spec.add_dependency "prawn-table", "~> 0.2.1"
+  spec.add_dependency "bidi", "~> 0.0.2"
+  spec.add_dependency "arabic-letter-connector", "~> 0.1.1"
+  spec.add_dependency "nokogiri", "~> 1.16"
 end

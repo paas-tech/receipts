@@ -1,5 +1,5 @@
 module Receipts
   class Statement < Base
-    @title = "Statement"
+    @title = "كشف"
   end
 end
