@@ -19,15 +19,15 @@ module Receipts
     def generate_from(attributes)
       return if attributes.empty?
 
-      company = attributes.fetch(:company)
+      company = localize(attributes.fetch(:company))
       header company: company, height: attributes.fetch(:logo_height, 16)
-      render_details attributes.fetch(:details)
-      render_billing_details company: company, recipient: attributes.fetch(:recipient)
+      render_details localize(attributes.fetch(:details))
+      render_billing_details company: company, recipient: localize(attributes.fetch(:recipient))
       render_line_items(
-        line_items: attributes.fetch(:line_items),
-        column_widths: attributes[:column_widths]
+        line_items: localize(attributes.fetch(:line_items)),
+        column_widths: localize(attributes[:column_widths])
       )
-      render_footer attributes.fetch(:footer, default_message(company: company))
+      render_footer localize(attributes.fetch(:footer, default_message(company: company)))
     end
 
     def setup_fonts(custom_font = nil)
@@ -57,11 +57,11 @@ module Receipts
       end
 
       move_up height
-      text localize(title), style: :bold, size: 16, align: :right
+      text title, style: :bold, size: 16, align: :right
     end
 
     def render_details(details, margin_top: 16)
-      rtl_details = details.map { |detail| localize(detail.reverse) }
+      rtl_details = details
 
       move_down margin_top
       table(rtl_details, position: :right, cell_style: {borders: [], inline_format: true, padding: [0, 0, 2, 8], align: :right})
@@ -75,8 +75,8 @@ module Receipts
 
       line_items = [
         [
-          {content: localize(Array(recipient).join("\n")), padding: [0, 0, 0, 12]},
-          {content: "<b>#{localize(company.fetch(:name))}</b>\n#{localize(company_details)}", padding: [0, 0, 0, 12]}
+          {content: Array(recipient).join("\n"), padding: [0, 0, 0, 12]},
+          {content: "<b>#{company.fetch(:name)}</b>\n#{company_details}", padding: [0, 0, 0, 12]}
         ]
       ]
       table(line_items, width: bounds.width, cell_style: {borders: [], inline_format: true, overflow: :expand, align: :right})
@@ -93,7 +93,7 @@ module Receipts
         column_widths: column_widths
       }.compact
 
-      rtl_line_items = line_items.map { |line_item| localize(line_item.reverse) }
+      rtl_line_items = line_items
 
       table(rtl_line_items, table_options) do
         cells.padding = 6
@@ -104,7 +104,7 @@ module Receipts
 
     def render_footer(message, margin_top: 30)
       move_down margin_top
-      text localize(message), inline_format: true, align: :right
+      text message, inline_format: true, align: :right
     end
 
     def default_message(company:)
@@ -114,8 +114,10 @@ module Receipts
     def localize(text)
       if text.is_a?(Array)
         text.map { |t| localize(t) }
+      elsif text.is_a?(Hash)
+        text.transform_values { |v| localize(v) }
       else
-        return unless text && text.is_a?(String)
+        return text unless text.is_a?(String)
 
         process_bidi_with_tags(text)
       end
@@ -125,9 +127,7 @@ module Receipts
       parsed_text = Nokogiri::HTML.fragment(text)
 
       parsed_text.traverse do |node|
-        if node.text?
-          node.content = @bidi.to_visual(node.text.connect_arabic_letters)
-        end
+        node.content = @bidi.to_visual(node.text.connect_arabic_letters) if node.text?
       end
 
       parsed_text.to_html
